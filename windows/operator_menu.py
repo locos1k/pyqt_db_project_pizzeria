@@ -1,0 +1,24 @@
+from windows.base import load_ui
+
+
+class OperatorMenuWindow:
+    def __init__(self, login_window):
+        self.login_window = login_window
+        self.ui = load_ui("operator_menu.ui")
+
+        self.ui.btnLogout.clicked.connect(self.logout)
+        self.ui.btnCreateOrder.clicked.connect(self.open_create_order)
+
+    def show(self):
+        self.ui.show()
+
+    def logout(self):
+        self.ui.close()
+        self.login_window.show()
+    
+    def open_create_order(self):
+        from windows.create_order import CreateOrder
+
+        self.create_order_window = CreateOrder(self)
+        self.create_order_window.show()
+        self.ui.close()
