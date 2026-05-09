@@ -8,6 +8,8 @@ class AdminMenuWindow:
 
         self.ui.btnLogout.clicked.connect(self.logout)
         self.ui.btnClients.clicked.connect(self.open_clients)
+        self.ui.btnOrders.clicked.connect(self.open_orders)
+        self.ui.btnCouriers.clicked.connect(self.open_couriers)
 
     def show(self):
         self.ui.show()
@@ -21,4 +23,18 @@ class AdminMenuWindow:
 
         self.clients_window = ClientsWindow(self)
         self.clients_window.show()
+        self.ui.close()
+
+    def open_orders(self):
+        from windows.orders import Orders
+
+        self.orders_window = Orders(self)
+        self.orders_window.show()
+        self.ui.close()
+
+    def open_couriers(self):
+        from windows.couriers import Couriers
+
+        self.couriers_window = Couriers(self)
+        self.couriers_window.show()
         self.ui.close()

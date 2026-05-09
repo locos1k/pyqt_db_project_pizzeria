@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QHeaderView, QAbstractItemView
 
 from windows.base import load_ui
 from db import get_connection
@@ -45,12 +45,20 @@ class ClientsWindow:
         ])
         self.ui.twAddresses.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
+        self.ui.twAddresses.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.twAddresses.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.twAddresses.setSelectionMode(QAbstractItemView.SingleSelection)
+
         self.ui.twOrders.setColumnCount(7)
         self.ui.twOrders.setHorizontalHeaderLabels([
             "Order ID", "Адрес", "Курьер", "Дата заказа", "Комментарий", "Статус заказа", "Статус оплаты"
         ])
         self.ui.twOrders.setColumnHidden(0, True)
         self.ui.twOrders.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+        self.ui.twOrders.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.twOrders.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.twOrders.setSelectionMode(QAbstractItemView.SingleSelection)
 
     def load_clients(self):
         try:
@@ -235,6 +243,20 @@ class ClientsWindow:
     def add_client(self):
         from windows.add_client import AddClient
 
-        self.add_client_window = AddClient(self)
+        self.add_client_window = AddClient(
+            parent_window=self,
+            after_save_callback=self.after_client_added
+        )
         self.add_client_window.show()
         self.ui.close()
+
+
+    def after_client_added(self, new_client_id):
+        self.ui.show()
+        self.load_clients()
+
+        for i, client in enumerate(self.clients_data):
+            if client[0] == new_client_id:
+                self.current_client_index = i
+                self.show_current_client()
+                break

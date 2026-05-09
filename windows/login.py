@@ -17,14 +17,14 @@ class LoginWindow:
         user = self.ui.cbUser.currentText()
         password = self.ui.lePassword.text()
 
-        if user == "Администратор" and password == "admin":
+        if user == "Администратор" and password == "1":
             from windows.admin_menu import AdminMenuWindow
 
             self.admin_window = AdminMenuWindow(self)
             self.admin_window.show()
             self.ui.close()
 
-        elif user == "Оператор" and password == "operator":
+        elif user == "Оператор" and password == "2":
             from windows.operator_menu import OperatorMenuWindow
 
             self.operator_window = OperatorMenuWindow(self)

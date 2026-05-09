@@ -8,6 +8,7 @@ class OperatorMenuWindow:
 
         self.ui.btnLogout.clicked.connect(self.logout)
         self.ui.btnCreateOrder.clicked.connect(self.open_create_order)
+        self.ui.btnOrders.clicked.connect(self.open_orders)
 
     def show(self):
         self.ui.show()
@@ -21,4 +22,11 @@ class OperatorMenuWindow:
 
         self.create_order_window = CreateOrder(self)
         self.create_order_window.show()
+        self.ui.close()
+
+    def open_orders(self):
+        from windows.orders import Orders
+
+        self.orders_window = Orders(self)
+        self.orders_window.show()
         self.ui.close()

@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QHeaderView
+from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QHeaderView, QAbstractItemView
 
 from windows.base import load_ui
 from db import get_connection
@@ -46,6 +46,10 @@ class CreateOrder:
         self.ui.twOrderItems.setColumnHidden(0, True)
         self.ui.twOrderItems.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.ui.twOrderItems.horizontalHeader().setStretchLastSection(True)
+
+        self.ui.twOrderItems.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.twOrderItems.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.ui.twOrderItems.setSelectionMode(QAbstractItemView.SingleSelection)
 
     def setup_static_values(self):
         self.ui.cbStatus.clear()
@@ -127,7 +131,9 @@ class CreateOrder:
             cur.execute("""
                 SELECT courier_id, full_name
                 FROM couriers
+                WHERE status = 'active'
                 ORDER BY full_name;
+                
             """)
             rows = cur.fetchall()
 
@@ -209,9 +215,6 @@ class CreateOrder:
         self.ui.sbQuantity.setValue(1)
         self.refresh_order_items_table()
 
-    def save_order(self):
-        QMessageBox.information(self.ui, "Пока заглушка", "Сохранение заказа добавим следующим шагом")
-
     def open_add_client(self):
         from windows.add_client import AddClient
 
@@ -256,3 +259,103 @@ class CreateOrder:
         index = self.ui.cbAddress.findData(new_address_id)
         if index >= 0:
             self.ui.cbAddress.setCurrentIndex(index)
+
+    def save_order(self):
+        client_id = self.ui.cbClient.currentData()
+        address_id = self.ui.cbAddress.currentData()
+        courier_id = self.ui.cbCourier.currentData()
+        status = self.ui.cbStatus.currentText()
+        payment_method = self.ui.cbPaymentMethod.currentText()
+        comment = self.ui.teComment.toPlainText().strip()
+
+        if client_id is None:
+            QMessageBox.warning(self.ui, "Ошибка", "Выберите клиента")
+            return
+
+        if address_id is None:
+            QMessageBox.warning(self.ui, "Ошибка", "Выберите адрес доставки")
+            return
+
+        if courier_id is None:
+            QMessageBox.warning(self.ui, "Ошибка", "Выберите курьера")
+            return
+
+        if not self.order_items:
+            QMessageBox.warning(self.ui, "Ошибка", "Добавьте хотя бы одну пиццу в заказ")
+            return
+
+        order_total = sum(item["total"] for item in self.order_items)
+
+        try:
+            self.connect_db()
+
+            with self.conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO payments(status, amount, method)
+                    VALUES (%s, %s, %s)
+                    RETURNING payment_id;
+                """, (
+                    payment_method,
+                    order_total,
+                    "created"
+                ))
+
+                payment_id = cur.fetchone()[0]
+
+                cur.execute("""
+                    INSERT INTO orders(
+                        client_id,
+                        address_id,
+                        courier_id,
+                        order_date_time,
+                        delivered_date_time,
+                        comment,
+                        status,
+                        payment_id,
+                        order_date
+                    )
+                    VALUES (
+                        %s, %s, %s,
+                        CURRENT_TIMESTAMP,
+                        NULL,
+                        %s,
+                        %s,
+                        %s,
+                        CURRENT_DATE
+                    )
+                    RETURNING order_id;
+                """, (
+                    client_id,
+                    address_id,
+                    courier_id,
+                    comment if comment else None,
+                    status,
+                    payment_id
+                ))
+
+                order_id = cur.fetchone()[0]
+
+                for item in self.order_items:
+                    cur.execute("""
+                        INSERT INTO orderpizza(order_id, pizza_id, quantity)
+                        VALUES (%s, %s, %s);
+                    """, (
+                        order_id,
+                        item["pizza_id"],
+                        item["quantity"]
+                    ))
+
+            self.conn.commit()
+
+            QMessageBox.information(
+                self.ui,
+                "Успех",
+                f"Заказ №{order_id} успешно создан"
+            )
+
+            self.clear_order()
+            self.load_couriers()
+
+        except Exception as e:
+            self.conn.rollback()
+            QMessageBox.critical(self.ui, "Ошибка БД", str(e))

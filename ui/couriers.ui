@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>839</width>
-    <height>432</height>
+    <width>719</width>
+    <height>196</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,7 +43,61 @@
     </font>
    </property>
    <property name="text">
-    <string>ФИО клиента</string>
+    <string>ФИО курьра</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnNext">
+   <property name="geometry">
+    <rect>
+     <x>580</x>
+     <y>65</y>
+     <width>41</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>&gt;</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="lbRating">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>120</y>
+     <width>151</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Рейтинг</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnPrev">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>65</y>
+     <width>41</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>&lt;</string>
    </property>
   </widget>
   <widget class="QFrame" name="frame">
@@ -70,9 +124,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>20</y>
+      <y>15</y>
       <width>111</width>
-      <height>16</height>
+      <height>21</height>
      </rect>
     </property>
     <property name="font">
@@ -81,15 +135,15 @@
      </font>
     </property>
     <property name="text">
-     <string>Клиенты</string>
+     <string>Курьеры</string>
     </property>
    </widget>
    <widget class="QPushButton" name="btnOpenReport">
     <property name="geometry">
      <rect>
-      <x>130</x>
+      <x>330</x>
       <y>15</y>
-      <width>121</width>
+      <width>241</width>
       <height>32</height>
      </rect>
     </property>
@@ -99,13 +153,13 @@
      </font>
     </property>
     <property name="text">
-     <string>Открыть отчет</string>
+     <string>Открыть отчет по данному курьеру</string>
     </property>
    </widget>
    <widget class="QPushButton" name="btnBack">
     <property name="geometry">
      <rect>
-      <x>740</x>
+      <x>630</x>
       <y>15</y>
       <width>81</width>
       <height>32</height>
@@ -120,6 +174,42 @@
      <string>Назад</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="btnCourierOrders">
+    <property name="geometry">
+     <rect>
+      <x>120</x>
+      <y>15</y>
+      <width>191</width>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>13</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>Заказы по данному курьеру</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QPushButton" name="btnEditCourier">
+   <property name="geometry">
+    <rect>
+     <x>500</x>
+     <y>115</y>
+     <width>151</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Сохранить</string>
+   </property>
   </widget>
   <widget class="QLineEdit" name="lePhone">
    <property name="geometry">
@@ -134,6 +224,60 @@
     <font>
      <pointsize>13</pointsize>
     </font>
+   </property>
+   <property name="inputMask">
+    <string>+7 (999) 999-99-99</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="lbStatus">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>145</y>
+     <width>141</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Статус курьера</string>
+   </property>
+  </widget>
+  <widget class="QLineEdit" name="leRating">
+   <property name="geometry">
+    <rect>
+     <x>150</x>
+     <y>120</y>
+     <width>321</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnDeleteCourier">
+   <property name="geometry">
+    <rect>
+     <x>500</x>
+     <y>140</y>
+     <width>151</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Удалить</string>
    </property>
   </widget>
   <widget class="QLabel" name="lbPhone">
@@ -154,203 +298,14 @@
     <string>Номер телефона</string>
    </property>
   </widget>
-  <widget class="QLineEdit" name="leEmail">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>120</y>
-     <width>321</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-  </widget>
-  <widget class="QLabel" name="lbEmail">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>120</y>
-     <width>151</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Электронная почта</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="leLoyaltyPoints">
-   <property name="geometry">
-    <rect>
-     <x>150</x>
-     <y>145</y>
-     <width>321</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-  </widget>
-  <widget class="QLabel" name="lbLoyaltyPoints">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>145</y>
-     <width>141</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Баллы лояльности</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnPrev">
-   <property name="geometry">
-    <rect>
-     <x>530</x>
-     <y>65</y>
-     <width>41</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>&lt;</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnNext">
-   <property name="geometry">
-    <rect>
-     <x>580</x>
-     <y>65</y>
-     <width>41</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>&gt;</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnAddClient">
-   <property name="geometry">
-    <rect>
-     <x>500</x>
-     <y>90</y>
-     <width>151</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Добавить клиента</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnEditClient">
-   <property name="geometry">
-    <rect>
-     <x>500</x>
-     <y>115</y>
-     <width>151</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Сохранить</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="btnDeleteClient">
-   <property name="geometry">
-    <rect>
-     <x>500</x>
-     <y>140</y>
-     <width>151</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Удалить</string>
-   </property>
-  </widget>
-  <widget class="QTableWidget" name="twAddresses">
-   <property name="geometry">
-    <rect>
-     <x>15</x>
-     <y>200</y>
-     <width>431</width>
-     <height>81</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-  </widget>
-  <widget class="QLabel" name="lbAddresses">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>180</y>
-     <width>141</width>
-     <height>16</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>Адреса</string>
-   </property>
-  </widget>
-  <widget class="QLineEdit" name="leClientId">
+  <widget class="QLineEdit" name="leCourierId">
    <property name="enabled">
     <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
-     <x>730</x>
-     <y>70</y>
+     <x>530</x>
+     <y>170</y>
      <width>71</width>
      <height>21</height>
     </rect>
@@ -370,13 +325,13 @@
     <bool>false</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="lbOrders">
+  <widget class="QPushButton" name="btnAddCourier">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>290</y>
-     <width>141</width>
-     <height>16</height>
+     <x>500</x>
+     <y>90</y>
+     <width>151</width>
+     <height>32</height>
     </rect>
    </property>
    <property name="font">
@@ -385,23 +340,38 @@
     </font>
    </property>
    <property name="text">
-    <string>Заказы</string>
+    <string>Добавить курьера</string>
    </property>
   </widget>
-  <widget class="QTableWidget" name="twOrders">
+  <widget class="QComboBox" name="cbStatus">
    <property name="geometry">
     <rect>
-     <x>15</x>
-     <y>310</y>
-     <width>801</width>
-     <height>101</height>
+     <x>145</x>
+     <y>145</y>
+     <width>331</width>
+     <height>20</height>
     </rect>
    </property>
-   <property name="font">
-    <font>
-     <pointsize>13</pointsize>
-    </font>
-   </property>
+   <item>
+    <property name="text">
+     <string>Новый элемент</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>active</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>on_delivery</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>inactive</string>
+    </property>
+   </item>
   </widget>
  </widget>
  <resources/>

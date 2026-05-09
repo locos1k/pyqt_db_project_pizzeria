@@ -1,28 +1,32 @@
 import csv
-from pathlib import Path
 
-from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QFileDialog, QHeaderView, QAbstractItemView
-from PySide6.QtGui import QPdfWriter, QPainter, QFont, QPageSize, QTextDocument, QPageLayout
+from PySide6.QtWidgets import (
+    QMessageBox,
+    QTableWidgetItem,
+    QFileDialog,
+    QHeaderView,
+    QAbstractItemView,
+)
+from PySide6.QtGui import QTextDocument
 from PySide6.QtPrintSupport import QPrinter
 from PySide6.QtCore import QMarginsF
+from PySide6.QtGui import QPageLayout
 
 from windows.base import load_ui
 from db import get_connection
 
 
-class ClientReport:
-    def __init__(self, parent_window, client_id, client_name):
+class CourierReport:
+    def __init__(self, parent_window, courier_id):
         self.parent_window = parent_window
-        self.client_id = client_id
-        self.client_name = client_name
+        self.courier_id = courier_id
+        self.ui = load_ui("courier_report.ui")
 
-        self.ui = load_ui("client_report.ui")
+        self.courier_info = None
         self.report_rows = []
 
-        self.ui.lbTitle.setText("Отчёт по клиенту")
-        self.ui.lbClientInfo.setText(f"Клиент: {self.client_name}")
-
         self.ui.btnBack.clicked.connect(self.back)
+        self.ui.btnSaveCsv.clicked.connect(self.save_csv)
         self.ui.btnSavePdf.clicked.connect(self.save_pdf)
 
         self.setup_table()
@@ -38,21 +42,20 @@ class ClientReport:
     def setup_table(self):
         self.ui.twReport.setColumnCount(7)
         self.ui.twReport.setHorizontalHeaderLabels([
-            "Номер заказа",
+            "№ заказа",
+            "Клиент",
             "Адрес",
-            "Курьер",
             "Дата заказа",
-            "Комментарий",
             "Статус заказа",
-            "Статус оплаты"
+            "Статус оплаты",
+            "Сумма",
         ])
-
-        self.ui.twReport.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.ui.twReport.horizontalHeader().setStretchLastSection(True)
 
         self.ui.twReport.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.twReport.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.twReport.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.twReport.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.ui.twReport.horizontalHeader().setStretchLastSection(True)
 
     def load_report(self):
         try:
@@ -60,26 +63,45 @@ class ClientReport:
 
             with conn.cursor() as cur:
                 cur.execute("""
+                    SELECT full_name, phone, rating, status
+                    FROM couriers
+                    WHERE courier_id = %s;
+                """, (self.courier_id,))
+
+                self.courier_info = cur.fetchone()
+
+                if self.courier_info is None:
+                    QMessageBox.warning(self.ui, "Ошибка", "Курьер не найден")
+                    conn.close()
+                    return
+
+                cur.execute("""
                     SELECT
                         o.order_id,
+                        cl.full_name AS client_name,
                         a.city || ', ' || a.street || ', д. ' || a.house ||
                             COALESCE(', кв. ' || a.apartment, '') AS full_address,
-                        c.full_name AS courier_name,
                         TO_CHAR(o.order_date_time, 'DD.MM.YYYY HH24:MI') AS order_dt,
-                        o.comment,
-                        o.status,
-                        p.status AS payment_status
+                        o.status AS order_status,
+                        p.status AS payment_status,
+                        p.amount
                     FROM orders o
+                    JOIN clients cl ON cl.client_id = o.client_id
                     LEFT JOIN addresses a ON a.address_id = o.address_id
-                    LEFT JOIN couriers c ON c.courier_id = o.courier_id
                     LEFT JOIN payments p ON p.payment_id = o.payment_id
-                    WHERE o.client_id = %s
-                    ORDER BY o.order_date_time;
-                """, (self.client_id,))
+                    WHERE o.courier_id = %s
+                    ORDER BY o.order_date_time DESC, o.order_id DESC;
+                """, (self.courier_id,))
 
                 self.report_rows = cur.fetchall()
 
             conn.close()
+
+            full_name, phone, rating, status = self.courier_info
+
+            self.ui.lbCourierInfo.setText(
+                f"Курьер: {full_name} | Телефон: {phone} | Рейтинг: {rating} | Статус: {status}"
+            )
 
             self.ui.twReport.setRowCount(len(self.report_rows))
 
@@ -93,6 +115,47 @@ class ClientReport:
         except Exception as e:
             QMessageBox.critical(self.ui, "Ошибка БД", str(e))
 
+    def save_csv(self):
+        if not self.report_rows:
+            QMessageBox.warning(self.ui, "Ошибка", "Нет данных для сохранения")
+            return
+
+        file_name, _ = QFileDialog.getSaveFileName(
+            self.ui,
+            "Сохранить отчёт",
+            f"courier_{self.courier_id}_report.csv",
+            "CSV Files (*.csv)"
+        )
+
+        if not file_name:
+            return
+
+        try:
+            headers = [
+                "№ заказа",
+                "Клиент",
+                "Адрес",
+                "Дата заказа",
+                "Статус заказа",
+                "Статус оплаты",
+                "Сумма",
+            ]
+
+            with open(file_name, "w", newline="", encoding="utf-8-sig") as file:
+                writer = csv.writer(file, delimiter=";")
+                writer.writerow(headers)
+
+                for row in self.report_rows:
+                    writer.writerow([
+                        "-" if value is None or str(value).strip() == "" else str(value)
+                        for value in row
+                    ])
+
+            QMessageBox.information(self.ui, "Успех", "Отчёт сохранён в CSV")
+
+        except Exception as e:
+            QMessageBox.critical(self.ui, "Ошибка", str(e))
+
     def save_pdf(self):
         if not self.report_rows:
             QMessageBox.warning(self.ui, "Ошибка", "Нет данных для сохранения")
@@ -101,7 +164,7 @@ class ClientReport:
         file_name, _ = QFileDialog.getSaveFileName(
             self.ui,
             "Сохранить отчёт в PDF",
-            f"client_{self.client_id}_report.pdf",
+            f"courier_{self.courier_id}_report.pdf",
             "PDF Files (*.pdf)"
         )
 
@@ -112,6 +175,8 @@ class ClientReport:
             file_name += ".pdf"
 
         try:
+            full_name, phone, rating, status = self.courier_info
+
             html = f"""
             <html>
             <head>
@@ -126,7 +191,7 @@ class ClientReport:
                         font-size: 18pt;
                         margin-bottom: 20px;
                     }}
-                    .client-info {{
+                    .courier-info {{
                         margin-bottom: 20px;
                         font-size: 11pt;
                     }}
@@ -151,22 +216,24 @@ class ClientReport:
                 </style>
             </head>
             <body>
-                <h1>Отчёт по клиенту</h1>
+                <h1>Отчёт по курьеру</h1>
 
-                <div class="client-info">
-                    <p><b>Клиент:</b> {self.client_name}</p>
-                    <p><b>ID клиента:</b> {self.client_id}</p>
+                <div class="courier-info">
+                    <p><b>ФИО:</b> {full_name}</p>
+                    <p><b>Телефон:</b> {phone}</p>
+                    <p><b>Рейтинг:</b> {rating}</p>
+                    <p><b>Статус:</b> {status}</p>
                 </div>
 
                 <table>
                     <tr>
                         <th>№ заказа</th>
+                        <th>Клиент</th>
                         <th>Адрес</th>
-                        <th>Курьер</th>
                         <th>Дата заказа</th>
-                        <th>Комментарий</th>
-                        <th>Статус</th>
-                        <th>Оплата</th>
+                        <th>Статус заказа</th>
+                        <th>Статус оплаты</th>
+                        <th>Сумма</th>
                     </tr>
             """
 
