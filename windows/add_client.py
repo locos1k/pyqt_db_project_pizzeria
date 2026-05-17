@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QMessageBox
+import re
 
 from windows.base import load_ui
 from db import get_connection
@@ -28,12 +29,16 @@ class AddClient:
             QMessageBox.warning(self.ui, "Ошибка", "Введите ФИО клиента")
             return
 
-        if not phone:
+        if not phone or not self.is_valid_phone(phone):
             QMessageBox.warning(self.ui, "Ошибка", "Введите номер телефона")
             return
 
         if not email:
             QMessageBox.warning(self.ui, "Ошибка", "Введите электронную почту")
+            return
+        
+        if not self.is_valid_email(email):
+            QMessageBox.warning(self.ui, "Ошибка", "Электронная почта должна содержать только латинские символы, обязательно @ и точку")
             return
 
         try:
@@ -78,6 +83,12 @@ class AddClient:
         finally:
             if conn:
                 conn.close()
+
+    def is_valid_phone(self, phone):
+        return re.fullmatch(r"\+7 \(\d{3}\) \d{3}-\d{2}-\d{2}", phone) is not None
+
+    def is_valid_email(self, email):
+        return re.fullmatch(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", email) is not None
 
     def cancel(self):
         self.ui.close()

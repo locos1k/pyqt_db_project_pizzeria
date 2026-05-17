@@ -1,4 +1,5 @@
 from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QHeaderView, QAbstractItemView
+from PySide6.QtCore import Qt
 
 from windows.base import load_ui
 from db import get_connection
@@ -11,6 +12,7 @@ class CreateOrder:
 
         self.conn = None
         self.order_items = []
+        self.is_refreshing_table = False
 
         self.ui.btnBack.clicked.connect(self.back)
         self.ui.btnAddPizza.clicked.connect(self.add_pizza_to_order)
@@ -21,6 +23,7 @@ class CreateOrder:
         self.ui.btnNewAddress.clicked.connect(self.open_add_address)
 
         self.ui.cbClient.currentIndexChanged.connect(self.load_addresses_for_client)
+        self.ui.twOrderItems.itemChanged.connect(self.on_order_item_changed)
 
         self.setup_table()
         self.setup_static_values()
@@ -47,18 +50,13 @@ class CreateOrder:
         self.ui.twOrderItems.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.ui.twOrderItems.horizontalHeader().setStretchLastSection(True)
 
-        self.ui.twOrderItems.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.twOrderItems.setEditTriggers(
+            QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed
+        )
         self.ui.twOrderItems.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.twOrderItems.setSelectionMode(QAbstractItemView.SingleSelection)
 
     def setup_static_values(self):
-        self.ui.cbStatus.clear()
-        self.ui.cbStatus.addItems([
-            "created",
-            "in_preparation",
-            "delivered"
-        ])
-
         self.ui.cbPaymentMethod.clear()
         self.ui.cbPaymentMethod.addItems([
             "cash",
@@ -170,34 +168,83 @@ class CreateOrder:
         pizza_id = pizza_data["pizza_id"]
         name = pizza_data["name"]
         price = pizza_data["price"]
-        total = price * quantity
+
+        for item in self.order_items:
+            if item["pizza_id"] == pizza_id:
+                item["quantity"] += quantity
+                item["total"] = item["price"] * item["quantity"]
+                self.refresh_order_items_table()
+                return
 
         self.order_items.append({
             "pizza_id": pizza_id,
             "name": name,
             "quantity": quantity,
             "price": price,
-            "total": total
+            "total": price * quantity
         })
 
         self.refresh_order_items_table()
 
     def refresh_order_items_table(self):
+        self.is_refreshing_table = True
+
         self.ui.twOrderItems.clearContents()
         self.ui.twOrderItems.setRowCount(len(self.order_items))
 
         for i, item in enumerate(self.order_items):
-            self.ui.twOrderItems.setItem(i, 0, QTableWidgetItem(str(item["pizza_id"])))
-            self.ui.twOrderItems.setItem(i, 1, QTableWidgetItem(item["name"]))
-            self.ui.twOrderItems.setItem(i, 2, QTableWidgetItem(str(item["quantity"])))
-            self.ui.twOrderItems.setItem(i, 3, QTableWidgetItem(str(item["price"])))
-            self.ui.twOrderItems.setItem(i, 4, QTableWidgetItem(str(item["total"])))
+            pizza_id_item = QTableWidgetItem(str(item["pizza_id"]))
+            name_item = QTableWidgetItem(item["name"])
+            quantity_item = QTableWidgetItem(str(item["quantity"]))
+            price_item = QTableWidgetItem(f"{item['price']:.2f}")
+            total_item = QTableWidgetItem(f"{item['total']:.2f}")
+
+            pizza_id_item.setFlags(pizza_id_item.flags() & ~Qt.ItemIsEditable)
+            name_item.setFlags(name_item.flags() & ~Qt.ItemIsEditable)
+            price_item.setFlags(price_item.flags() & ~Qt.ItemIsEditable)
+            total_item.setFlags(total_item.flags() & ~Qt.ItemIsEditable)
+
+            self.ui.twOrderItems.setItem(i, 0, pizza_id_item)
+            self.ui.twOrderItems.setItem(i, 1, name_item)
+            self.ui.twOrderItems.setItem(i, 2, quantity_item)
+            self.ui.twOrderItems.setItem(i, 3, price_item)
+            self.ui.twOrderItems.setItem(i, 4, total_item)
 
         self.ui.twOrderItems.resizeColumnsToContents()
         self.ui.twOrderItems.setColumnHidden(0, True)
 
         order_total = sum(item["total"] for item in self.order_items)
         self.ui.lbTotal.setText(f"Итого: {order_total:.2f} руб.")
+
+        self.is_refreshing_table = False
+
+    def on_order_item_changed(self, item):
+        if self.is_refreshing_table:
+            return
+
+        row = item.row()
+        column = item.column()
+
+        if column != 2:
+            self.refresh_order_items_table()
+            return
+
+        try:
+            new_quantity = int(item.text())
+
+            if new_quantity <= 0:
+                QMessageBox.warning(self.ui, "Ошибка", "Количество должно быть больше 0")
+                self.refresh_order_items_table()
+                return
+
+            self.order_items[row]["quantity"] = new_quantity
+            self.order_items[row]["total"] = self.order_items[row]["price"] * new_quantity
+
+            self.refresh_order_items_table()
+
+        except ValueError:
+            QMessageBox.warning(self.ui, "Ошибка", "Количество должно быть целым числом")
+            self.refresh_order_items_table()
 
     def remove_pizza_from_order(self):
         row = self.ui.twOrderItems.currentRow()
@@ -264,7 +311,7 @@ class CreateOrder:
         client_id = self.ui.cbClient.currentData()
         address_id = self.ui.cbAddress.currentData()
         courier_id = self.ui.cbCourier.currentData()
-        status = self.ui.cbStatus.currentText()
+        order_status = "created"
         payment_method = self.ui.cbPaymentMethod.currentText()
         comment = self.ui.teComment.toPlainText().strip()
 
@@ -295,9 +342,9 @@ class CreateOrder:
                     VALUES (%s, %s, %s)
                     RETURNING payment_id;
                 """, (
-                    payment_method,
+                    "created",
                     order_total,
-                    "created"
+                    payment_method
                 ))
 
                 payment_id = cur.fetchone()[0]
@@ -329,7 +376,7 @@ class CreateOrder:
                     address_id,
                     courier_id,
                     comment if comment else None,
-                    status,
+                    order_status,
                     payment_id
                 ))
 
