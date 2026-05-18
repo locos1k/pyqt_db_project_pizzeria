@@ -9,6 +9,7 @@ class OperatorMenuWindow:
         self.ui.btnLogout.clicked.connect(self.logout)
         self.ui.btnCreateOrder.clicked.connect(self.open_create_order)
         self.ui.btnOrders.clicked.connect(self.open_orders)
+        self.ui.btnClientReport.clicked.connect(self.open_client_orders_search)
 
     def show(self):
         self.ui.show()
@@ -27,6 +28,13 @@ class OperatorMenuWindow:
     def open_orders(self):
         from windows.orders import Orders
 
-        self.orders_window = Orders(self)
+        self.orders_window = Orders(self, mode="operator")
         self.orders_window.show()
+        self.ui.close()
+
+    def open_client_orders_search(self):
+        from windows.client_orders_search import ClientOrdersSearch
+
+        self.client_orders_search_window = ClientOrdersSearch(self)
+        self.client_orders_search_window.show()
         self.ui.close()

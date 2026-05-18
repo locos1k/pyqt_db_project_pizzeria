@@ -10,6 +10,8 @@ class LoginWindow:
         self.ui.btnAbout.clicked.connect(self.show_about)
         self.ui.btnExit.clicked.connect(self.ui.close)
 
+        self.ui.lePassword.returnPressed.connect(self.login)
+
     def show(self):
         self.ui.show()
 

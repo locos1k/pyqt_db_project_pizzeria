@@ -228,7 +228,8 @@ class Couriers:
 
         self.orders_window = Orders(
             parent_window=self,
-            courier_id=courier_id
+            courier_id=courier_id,
+            mode="admin"
         )
         self.orders_window.show()
         self.ui.close()
