@@ -11,6 +11,7 @@ class AdminMenuWindow:
         self.ui.btnOrders.clicked.connect(self.open_orders)
         self.ui.btnCouriers.clicked.connect(self.open_couriers)
         self.ui.btnCourierReport.clicked.connect(self.open_couriers_load_report)
+        self.ui.btnPizzaReport.clicked.connect(self.open_pizza_popularity_report)
 
     def show(self):
         self.ui.show()
@@ -45,4 +46,11 @@ class AdminMenuWindow:
 
         self.couriers_load_report_window = CouriersLoadReport(self)
         self.couriers_load_report_window.show()
+        self.ui.close()
+
+    def open_pizza_popularity_report(self):
+        from windows.pizza_popularity_report import PizzaPopularityReport
+
+        self.pizza_popularity_report_window = PizzaPopularityReport(self)
+        self.pizza_popularity_report_window.show()
         self.ui.close()
