@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import (
     QMessageBox,
     QTableWidgetItem,
-    QFileDialog,
     QHeaderView,
     QAbstractItemView,
+    QFileDialog,
 )
 
 from PySide6.QtGui import QTextDocument, QPageLayout
@@ -14,13 +14,11 @@ from windows.base import load_ui
 from db import get_connection
 
 
-class CourierReport:
-    def __init__(self, parent_window, courier_id):
+class CouriersLoadReport:
+    def __init__(self, parent_window):
         self.parent_window = parent_window
-        self.courier_id = courier_id
-        self.ui = load_ui("courier_report.ui")
+        self.ui = load_ui("couriers_load_report.ui")
 
-        self.courier_info = None
         self.report_rows = []
 
         self.ui.btnBack.clicked.connect(self.back)
@@ -39,13 +37,13 @@ class CourierReport:
     def setup_table(self):
         self.ui.twReport.setColumnCount(7)
         self.ui.twReport.setHorizontalHeaderLabels([
-            "№ заказа",
-            "Клиент",
-            "Адрес",
-            "Дата заказа",
-            "Статус заказа",
-            "Статус оплаты",
-            "Сумма",
+            "Курьер",
+            "Телефон",
+            "Статус",
+            "Кол-во заказов",
+            "Доставлено",
+            "Общая сумма",
+            "Средний этаж",
         ])
 
         self.ui.twReport.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -60,50 +58,25 @@ class CourierReport:
 
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT full_name, phone, rating, status
-                    FROM couriers
-                    WHERE courier_id = %s;
-                """, (self.courier_id,))
-
-                self.courier_info = cur.fetchone()
-
-                if self.courier_info is None:
-                    QMessageBox.warning(self.ui, "Ошибка", "Курьер не найден")
-                    conn.close()
-                    return
-
-                cur.execute("""
                     SELECT
-                        o.order_id,
-                        cl.full_name AS client_name,
-                        a.city || ', ' || a.street || ', д. ' || a.house ||
-                            COALESCE(', кв. ' || a.apartment, '') AS full_address,
-                        TO_CHAR(o.order_date_time, 'DD.MM.YYYY HH24:MI') AS order_dt,
-                        o.status AS order_status,
-                        p.status AS payment_status,
-                        p.amount
-                    FROM orders o
-                    JOIN clients cl ON cl.client_id = o.client_id
-                    LEFT JOIN addresses a ON a.address_id = o.address_id
+                        c.full_name AS courier_name,
+                        c.phone,
+                        c.status,
+                        COUNT(o.order_id) AS orders_count,
+                        COUNT(o.order_id) FILTER (WHERE o.status = 'delivered') AS delivered_count,
+                        COALESCE(SUM(p.amount), 0) AS total_amount,
+                        ROUND(AVG(a.floor), 2) AS avg_floor
+                    FROM couriers c
+                    LEFT JOIN orders o ON o.courier_id = c.courier_id
                     LEFT JOIN payments p ON p.payment_id = o.payment_id
-                    WHERE o.courier_id = %s
-                    ORDER BY o.order_date_time DESC, o.order_id DESC;
-                """, (self.courier_id,))
+                    LEFT JOIN addresses a ON a.address_id = o.address_id
+                    GROUP BY c.courier_id, c.full_name, c.phone, c.status
+                    ORDER BY orders_count DESC, delivered_count DESC, c.full_name;
+                """)
 
                 self.report_rows = cur.fetchall()
 
             conn.close()
-
-            full_name, phone, rating, status = self.courier_info
-            orders_count = len(self.report_rows)
-
-            self.ui.lbCourierInfo.setText(
-                f"Курьер: {full_name} | Телефон: {phone} | Рейтинг: {rating} | Статус: {status}"
-            )
-
-            self.ui.lbOrdersCount.setText(
-                f"Количество заказов: {orders_count}"
-            )
 
             self.ui.twReport.clearContents()
             self.ui.twReport.setRowCount(len(self.report_rows))
@@ -126,7 +99,7 @@ class CourierReport:
         file_name, _ = QFileDialog.getSaveFileName(
             self.ui,
             "Сохранить отчёт в PDF",
-            f"courier_{self.courier_id}_report.pdf",
+            "couriers_load_report.pdf",
             "PDF Files (*.pdf)"
         )
 
@@ -137,79 +110,62 @@ class CourierReport:
             file_name += ".pdf"
 
         try:
-            full_name, phone, rating, status = self.courier_info
-            orders_count = len(self.report_rows)
-
-            html = f"""
+            html = """
             <html>
             <head>
                 <meta charset="UTF-8">
                 <style>
-                    body {{
+                    body {
                         font-family: Arial, sans-serif;
                         font-size: 10pt;
-                    }}
-                    h1 {{
+                    }
+                    h1 {
                         text-align: center;
                         font-size: 18pt;
                         margin-bottom: 20px;
-                    }}
-                    .courier-info {{
-                        margin-bottom: 20px;
-                        font-size: 11pt;
-                    }}
-                    table {{
+                    }
+                    table {
                         width: 100%;
                         border-collapse: collapse;
-                    }}
-                    th, td {{
+                    }
+                    th, td {
                         border: 1px solid #000;
                         padding: 5px;
                         vertical-align: top;
                         word-wrap: break-word;
-                    }}
-                    th {{
+                    }
+                    th {
                         background-color: #eeeeee;
                         font-weight: bold;
                         text-align: center;
-                    }}
-                    td {{
+                    }
+                    td {
                         font-size: 9pt;
-                    }}
+                    }
                 </style>
             </head>
             <body>
-                <h1>Отчёт по курьеру</h1>
-
-                <div class="courier-info">
-                    <p><b>ФИО:</b> {full_name}</p>
-                    <p><b>Телефон:</b> {phone}</p>
-                    <p><b>Рейтинг:</b> {rating}</p>
-                    <p><b>Статус:</b> {status}</p>
-                    <p><b>Количество заказов:</b> {orders_count}</p>
-                </div>
+                <h1>Отчёт по нагрузке на курьеров</h1>
 
                 <table>
                     <tr>
-                        <th>№ заказа</th>
-                        <th>Клиент</th>
-                        <th>Адрес</th>
-                        <th>Дата заказа</th>
-                        <th>Статус заказа</th>
-                        <th>Статус оплаты</th>
-                        <th>Сумма</th>
+                        <th>Курьер</th>
+                        <th>Телефон</th>
+                        <th>Статус</th>
+                        <th>Кол-во заказов</th>
+                        <th>Доставлено</th>
+                        <th>Общая сумма</th>
+                        <th>Средний этаж</th>
                     </tr>
             """
 
             for row in self.report_rows:
-                formatted_row = [
-                    "-" if value is None or str(value).strip() == "" else str(value)
-                    for value in row
-                ]
-
                 html += "<tr>"
-                for value in formatted_row:
-                    html += f"<td>{value}</td>"
+
+                for value in row:
+                    text = "-" if value is None or str(value).strip() == "" else str(value)
+                    html += f"<td>{text}</td>"
+
                 html += "</tr>"
 
             html += """

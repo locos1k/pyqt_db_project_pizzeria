@@ -6,8 +6,9 @@ from db import get_connection
 
 
 class CreateOrder:
-    def __init__(self, operator_menu):
+    def __init__(self, operator_menu, preselected_client_id=None):
         self.operator_menu = operator_menu
+        self.preselected_client_id = preselected_client_id
         self.ui = load_ui("create_order.ui")
 
         self.conn = None
@@ -72,6 +73,13 @@ class CreateOrder:
         try:
             self.connect_db()
             self.load_clients()
+
+            if self.preselected_client_id is not None:
+                index = self.ui.cbClient.findData(self.preselected_client_id)
+                if index >= 0:
+                    self.ui.cbClient.setCurrentIndex(index)
+                    self.load_addresses_for_client()
+
             self.load_couriers()
             self.load_pizza()
 

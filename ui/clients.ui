@@ -403,6 +403,42 @@
     </font>
    </property>
   </widget>
+  <widget class="QPushButton" name="btnCreateOrder">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>115</y>
+     <width>151</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Оформить заказ</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnAddAddress">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>90</y>
+     <width>151</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>13</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>Добавить адрес</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>

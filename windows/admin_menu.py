@@ -10,6 +10,7 @@ class AdminMenuWindow:
         self.ui.btnClients.clicked.connect(self.open_clients)
         self.ui.btnOrders.clicked.connect(self.open_orders)
         self.ui.btnCouriers.clicked.connect(self.open_couriers)
+        self.ui.btnCourierReport.clicked.connect(self.open_couriers_load_report)
 
     def show(self):
         self.ui.show()
@@ -37,4 +38,11 @@ class AdminMenuWindow:
 
         self.couriers_window = Couriers(self)
         self.couriers_window.show()
+        self.ui.close()
+
+    def open_couriers_load_report(self):
+        from windows.couriers_load_report import CouriersLoadReport
+
+        self.couriers_load_report_window = CouriersLoadReport(self)
+        self.couriers_load_report_window.show()
         self.ui.close()

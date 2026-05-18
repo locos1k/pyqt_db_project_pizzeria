@@ -1,4 +1,5 @@
-from PySide6.QtWidgets import QMessageBox, QTableWidgetItem, QHeaderView, QAbstractItemView
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidgetItem, QMessageBox
 
 from windows.base import load_ui
 from db import get_connection
@@ -12,6 +13,7 @@ class ClientsWindow:
         self.conn = None
         self.clients_data = []
         self.current_client_index = 0
+        self.is_loading_tables = False
 
         self.ui.leClientId.hide()
 
@@ -23,6 +25,11 @@ class ClientsWindow:
         self.ui.btnDeleteClient.clicked.connect(self.delete_client)
         self.ui.btnAddClient.clicked.connect(self.add_client)
         self.ui.btnOpenReport.clicked.connect(self.open_report)
+        self.ui.btnAddAddress.clicked.connect(self.open_add_address)
+        self.ui.btnCreateOrder.clicked.connect(self.open_create_order)
+
+        self.ui.twAddresses.itemChanged.connect(self.on_address_changed)
+        self.ui.twOrders.itemChanged.connect(self.on_order_changed)
 
         self.setup_tables()
         self.load_clients()
@@ -39,26 +46,35 @@ class ClientsWindow:
             self.conn = get_connection()
 
     def setup_tables(self):
-        self.ui.twAddresses.setColumnCount(6)
+        self.ui.twAddresses.setColumnCount(7)
         self.ui.twAddresses.setHorizontalHeaderLabels([
-            "Город", "Улица", "Дом", "Квартира", "Этаж", "Комментарий"
+            "Address ID", "Город", "Улица", "Дом", "Квартира", "Этаж", "Комментарий"
         ])
-        self.ui.twAddresses.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
-        self.ui.twAddresses.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.twAddresses.setColumnHidden(0, True)
+        self.ui.twAddresses.setEditTriggers(
+            QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed
+        )
         self.ui.twAddresses.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.twAddresses.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.twAddresses.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.ui.twAddresses.horizontalHeader().setStretchLastSection(True)
 
-        self.ui.twOrders.setColumnCount(7)
+        self.ui.twOrders.setColumnCount(8)
         self.ui.twOrders.setHorizontalHeaderLabels([
-            "Order ID", "Адрес", "Курьер", "Дата заказа", "Комментарий", "Статус заказа", "Статус оплаты"
+            "Order ID", "Payment ID", "Адрес", "Курьер", "Дата заказа", "Комментарий", "Статус заказа", "Статус оплаты"
         ])
-        self.ui.twOrders.setColumnHidden(0, True)
-        self.ui.twOrders.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
-        self.ui.twOrders.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.ui.twOrders.setColumnHidden(0, True)
+        self.ui.twOrders.setColumnHidden(1, True)
+
+        self.ui.twOrders.setEditTriggers(
+            QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed
+        )
         self.ui.twOrders.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.ui.twOrders.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.ui.twOrders.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.ui.twOrders.horizontalHeader().setStretchLastSection(True)
 
     def load_clients(self):
         try:
@@ -106,16 +122,19 @@ class ClientsWindow:
             self.show_current_client()
 
     def load_addresses(self, client_id):
+        self.is_loading_tables = True
+
         self.ui.twAddresses.clearContents()
         self.ui.twAddresses.setRowCount(0)
 
         with self.conn.cursor() as cur:
             cur.execute("""
-                SELECT city, street, house, apartment, floor, comment
+                SELECT address_id, city, street, house, apartment, floor, comment
                 FROM addresses
                 WHERE client_id = %s
                 ORDER BY address_id;
             """, (client_id,))
+
             rows = cur.fetchall()
 
         self.ui.twAddresses.setRowCount(len(rows))
@@ -125,7 +144,14 @@ class ClientsWindow:
                 text = "-" if value is None or str(value).strip() == "" else str(value)
                 self.ui.twAddresses.setItem(i, j, QTableWidgetItem(text))
 
+        self.ui.twAddresses.resizeColumnsToContents()
+        self.ui.twAddresses.setColumnHidden(0, True)
+
+        self.is_loading_tables = False
+
     def load_orders(self, client_id):
+        self.is_loading_tables = True
+
         self.ui.twOrders.clearContents()
         self.ui.twOrders.setRowCount(0)
 
@@ -133,6 +159,7 @@ class ClientsWindow:
             cur.execute("""
                 SELECT
                     o.order_id,
+                    p.payment_id,
                     a.city || ', ' || a.street || ', д. ' || a.house ||
                         COALESCE(', кв. ' || a.apartment, '') AS full_address,
                     c.full_name AS courier_name,
@@ -147,6 +174,7 @@ class ClientsWindow:
                 WHERE o.client_id = %s
                 ORDER BY o.order_id;
             """, (client_id,))
+
             rows = cur.fetchall()
 
         self.ui.twOrders.setRowCount(len(rows))
@@ -154,7 +182,186 @@ class ClientsWindow:
         for i, row in enumerate(rows):
             for j, value in enumerate(row):
                 text = "-" if value is None or str(value).strip() == "" else str(value)
-                self.ui.twOrders.setItem(i, j, QTableWidgetItem(text))
+                item = QTableWidgetItem(text)
+
+                if j not in [5, 6, 7]:
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+
+                self.ui.twOrders.setItem(i, j, item)
+
+        self.ui.twOrders.resizeColumnsToContents()
+        self.ui.twOrders.setColumnHidden(0, True)
+        self.ui.twOrders.setColumnHidden(1, True)
+
+        self.is_loading_tables = False
+
+    def open_add_address(self):
+        if not self.ui.leClientId.text():
+            QMessageBox.warning(self.ui, "Ошибка", "Клиент не выбран")
+            return
+
+        from windows.add_address import AddAddress
+
+        client_id = int(self.ui.leClientId.text())
+
+        self.add_address_window = AddAddress(
+            parent_window=self,
+            client_id=client_id,
+            after_save_callback=self.after_address_added
+        )
+
+        self.add_address_window.show()
+        self.ui.close()
+
+    def after_address_added(self, new_address_id):
+        self.ui.show()
+
+        if not self.ui.leClientId.text():
+            return
+
+        client_id = int(self.ui.leClientId.text())
+        self.load_addresses(client_id)
+        self.load_orders(client_id)
+
+    def on_address_changed(self, item):
+        if self.is_loading_tables:
+            return
+
+        row = item.row()
+        column = item.column()
+
+        if column == 0:
+            return
+
+        address_id_item = self.ui.twAddresses.item(row, 0)
+        if address_id_item is None:
+            return
+
+        address_id = int(address_id_item.text())
+
+        column_map = {
+            1: "city",
+            2: "street",
+            3: "house",
+            4: "apartment",
+            5: "floor",
+            6: "comment",
+        }
+
+        field_name = column_map.get(column)
+        if field_name is None:
+            return
+
+        value = item.text().strip()
+
+        if value == "-":
+            value = None
+
+        if field_name == "floor" and value is not None:
+            try:
+                value = int(value)
+            except ValueError:
+                QMessageBox.warning(self.ui, "Ошибка", "Этаж должен быть числом")
+                self.show_current_client()
+                return
+
+        try:
+            self.connect_db()
+
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    f"UPDATE addresses SET {field_name} = %s WHERE address_id = %s;",
+                    (value, address_id)
+                )
+
+            self.conn.commit()
+
+        except Exception as e:
+            self.conn.rollback()
+            QMessageBox.critical(self.ui, "Ошибка БД", str(e))
+            self.show_current_client()
+
+    def on_order_changed(self, item):
+        if self.is_loading_tables:
+            return
+
+        row = item.row()
+        column = item.column()
+
+        order_id_item = self.ui.twOrders.item(row, 0)
+        payment_id_item = self.ui.twOrders.item(row, 1)
+
+        if order_id_item is None:
+            return
+
+        order_id = int(order_id_item.text())
+
+        order_statuses = ["created", "in_preparation", "delivered", "cancelled"]
+        payment_statuses = ["created", "paid", "not_paid", "cancelled"]
+
+        value = item.text().strip()
+
+        if value == "-":
+            value = None
+
+        try:
+            self.connect_db()
+
+            with self.conn.cursor() as cur:
+                if column == 5:
+                    cur.execute("""
+                        UPDATE orders
+                        SET comment = %s
+                        WHERE order_id = %s;
+                    """, (value, order_id))
+
+                elif column == 6:
+                    if value not in order_statuses:
+                        QMessageBox.warning(
+                            self.ui,
+                            "Ошибка",
+                            "Статус заказа должен быть одним из: created, in_preparation, delivered, cancelled"
+                        )
+                        self.show_current_client()
+                        return
+
+                    cur.execute("""
+                        UPDATE orders
+                        SET status = %s
+                        WHERE order_id = %s;
+                    """, (value, order_id))
+
+                elif column == 7:
+                    if value not in payment_statuses:
+                        QMessageBox.warning(
+                            self.ui,
+                            "Ошибка",
+                            "Статус оплаты должен быть одним из: created, paid, not_paid, cancelled"
+                        )
+                        self.show_current_client()
+                        return
+
+                    if payment_id_item is None or not payment_id_item.text():
+                        QMessageBox.warning(self.ui, "Ошибка", "У заказа не найдена запись оплаты")
+                        return
+
+                    payment_id = int(payment_id_item.text())
+
+                    cur.execute("""
+                        UPDATE payments
+                        SET status = %s
+                        WHERE payment_id = %s;
+                    """, (value, payment_id))
+
+                else:
+                    return
+
+            self.conn.commit()
+
+        except Exception as e:
+            self.conn.rollback()
+            QMessageBox.critical(self.ui, "Ошибка БД", str(e))
+            self.show_current_client()
 
     def edit_client(self):
         if not self.ui.leClientId.text():
@@ -238,6 +445,23 @@ class ClientsWindow:
 
         self.client_report_window = ClientReport(self, client_id, client_name)
         self.client_report_window.show()
+        self.ui.close()
+
+    def open_create_order(self):
+        if not self.ui.leClientId.text():
+            QMessageBox.warning(self.ui, "Ошибка", "Клиент не выбран")
+            return
+
+        from windows.create_order import CreateOrder
+
+        client_id = int(self.ui.leClientId.text())
+
+        self.create_order_window = CreateOrder(
+            operator_menu=self,
+            preselected_client_id=client_id
+        )
+
+        self.create_order_window.show()
         self.ui.close()
 
     def add_client(self):
