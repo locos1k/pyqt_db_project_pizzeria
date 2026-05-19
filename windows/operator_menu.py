@@ -5,6 +5,7 @@ class OperatorMenuWindow:
     def __init__(self, login_window):
         self.login_window = login_window
         self.ui = load_ui("operator_menu.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Меню Оператора")
 
         self.ui.btnLogout.clicked.connect(self.logout)
         self.ui.btnCreateOrder.clicked.connect(self.open_create_order)

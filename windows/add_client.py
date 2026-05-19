@@ -10,6 +10,7 @@ class AddClient:
         self.parent_window = parent_window
         self.after_save_callback = after_save_callback
         self.ui = load_ui("add_client.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Добавление клиента")
 
         self.ui.leLoyaltyPoints.setText("0")
 

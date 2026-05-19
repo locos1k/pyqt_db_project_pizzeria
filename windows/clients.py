@@ -9,6 +9,7 @@ class ClientsWindow:
     def __init__(self, admin_menu):
         self.admin_menu = admin_menu
         self.ui = load_ui("clients.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Клиенты")
 
         self.conn = None
         self.clients_data = []

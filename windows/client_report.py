@@ -17,6 +17,7 @@ class ClientReport:
         self.client_name = client_name
 
         self.ui = load_ui("client_report.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Отчет по клиенту")
         self.report_rows = []
 
         self.ui.lbTitle.setText("Отчёт по клиенту")

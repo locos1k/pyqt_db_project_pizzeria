@@ -28,6 +28,7 @@ class PizzaPopularityReport:
     def __init__(self, parent_window):
         self.parent_window = parent_window
         self.ui = load_ui("pizza_popularity_report.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Аналитика по популярности пицц")
 
         self.report_rows = []
         self.chart_view = None

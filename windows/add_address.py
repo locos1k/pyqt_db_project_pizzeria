@@ -11,6 +11,7 @@ class AddAddress:
         self.after_save_callback = after_save_callback
 
         self.ui = load_ui("add_address.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Добавление адреса")
 
         self.ui.leCity.setText("Москва")
 

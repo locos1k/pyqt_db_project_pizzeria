@@ -22,6 +22,7 @@ class Orders:
     def __init__(self, parent_window, courier_id=None, mode="operator"):
         self.parent_window = parent_window
         self.ui = load_ui("orders.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Заказы")
 
         self.conn = None
         self.courier_id = courier_id

@@ -8,6 +8,7 @@ class Couriers:
     def __init__(self, parent_window):
         self.parent_window = parent_window
         self.ui = load_ui("couriers.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Курьеры")
 
         self.conn = None
         self.couriers_data = []

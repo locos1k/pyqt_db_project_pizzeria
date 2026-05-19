@@ -10,6 +10,7 @@ class CreateOrder:
         self.operator_menu = operator_menu
         self.preselected_client_id = preselected_client_id
         self.ui = load_ui("create_order.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Оформление заказа")
 
         self.conn = None
         self.order_items = []

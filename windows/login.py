@@ -5,6 +5,7 @@ from windows.base import load_ui
 class LoginWindow:
     def __init__(self):
         self.ui = load_ui("login.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Авторизация")
 
         self.ui.btnLogin.clicked.connect(self.login)
         self.ui.btnAbout.clicked.connect(self.show_about)

@@ -5,6 +5,7 @@ class AdminMenuWindow:
     def __init__(self, login_window):
         self.login_window = login_window
         self.ui = load_ui("admin_menu.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Меню Администратора")
 
         self.ui.btnLogout.clicked.connect(self.logout)
         self.ui.btnClients.clicked.connect(self.open_clients)

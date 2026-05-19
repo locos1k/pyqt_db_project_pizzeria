@@ -19,6 +19,7 @@ class CourierReport:
         self.parent_window = parent_window
         self.courier_id = courier_id
         self.ui = load_ui("courier_report.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Отчет по курьеру")
 
         self.courier_info = None
         self.report_rows = []

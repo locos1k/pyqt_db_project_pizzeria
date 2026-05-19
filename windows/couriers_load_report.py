@@ -18,6 +18,7 @@ class CouriersLoadReport:
     def __init__(self, parent_window):
         self.parent_window = parent_window
         self.ui = load_ui("couriers_load_report.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Отчет по нагрузке на курьеров")
 
         self.report_rows = []
 

@@ -21,6 +21,7 @@ class ClientOrdersSearch:
     def __init__(self, parent_window):
         self.parent_window = parent_window
         self.ui = load_ui("client_orders_search.ui")
+        self.ui.setWindowTitle("АИС «Круглосуточная пицца на дом» – Отчет по клиенту")
 
         self.conn = None
         self.report_rows = []
